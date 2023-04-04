@@ -86,7 +86,19 @@ class  TMDBAPIUtils:
         return pd.concat([kaggle_df.loc[row_index],pd.Series(ret_result)])
         
 
+    def get_languages(self):
+        """
+        Get the language lookuptable from TMDB. Takes no input and Returns a dictionary of languages. 
+        
+        """
 
+        api_url=f"https://api.themoviedb.org/3/configuration/languages?api_key={self.api_key}"
+
+        with urlopen(api_url) as response:
+            body = response.read()
+            api_return=json.loads(body)
+        return api_return
+        
     def get_movie_cast(self, movie_id:str, limit:int=None, exclude_ids:list=None) -> list:
         """
         Get the movie cast for a given movie id, with optional parameters to exclude an cast member
@@ -160,12 +172,19 @@ if __name__ == "__main__":
 
     tmdb_api_utils = TMDBAPIUtils(api_key=config.api_key)
 
-    if False: #Create Genre Table?
+    if True: #Create Genre Table?
         #Get Genre Table#
         genre_respose= tmdb_api_utils.get_genres() 
         genre_df=pd.DataFrame.from_dict(genre_respose["genres"])
         #write Genre Table to CSV
         genre_df.to_csv("genres.csv")
+
+    if True: #Create language Table?
+    #Get language Table#
+        language_respose= tmdb_api_utils.get_languages() 
+        language_df=pd.DataFrame(language_respose)
+        #write Genre Table to CSV
+        language_df.to_csv("languagess.csv")
 
 
     #open kaggle csv of netflix movies
