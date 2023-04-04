@@ -57,32 +57,32 @@ class  TMDBAPIUtils:
         Returns the original row augmented with the retirieved TMDB data as a pd series.
         Last column reports if match was exact (exactly matching title) or inexact.
         """
+        #deterimine if record is movie or show. Make apropriate search based on title and release year
         if kaggle_df.loc[row_index,"type"]=="Movie":
-            #print("--is movie--")
             api_results=tmdb_api_utils.get_movie(kaggle_df.loc[row_index,"title"],kaggle_df.loc[row_index,"release_year"])
+
         elif kaggle_df.loc[row_index,"type"]=="TV Show":
-            #print("--is show--")
             api_results=tmdb_api_utils.get_show(kaggle_df.loc[row_index,"title"],kaggle_df.loc[row_index,"release_year"])
+
         else:
             raise Exception(f"Error in determining if title is a tv show or movie {kaggle_df.loc[row_index]}")
 
         ret_result={}
         for result in api_results:
-            #print("checking")
+            #check results for exact title match
             if result["original_title"]==kaggle_df.loc[row_index,"title"]:
                 ret_result={"TMDB_"+key:val for key,val in result.items()}
                 ret_result["match_type"]="exact"
                 break
+
         if not ret_result:
-            #print("no identical tile, reverting to first result of api query")
+            #if no exact match, flag as inexact match and take first search result
             if len(api_results)!=0:
                 result=api_results[0]
                 ret_result={"TMDB_"+key:val for key,val in result.items()}
             ret_result["match_type"]="inexact"
             match_result=ret_result
-        #print("active row")
-        #print(kaggle_df.loc[row_index])
-        #print("api result")
+
         return pd.concat([kaggle_df.loc[row_index],pd.Series(ret_result)])
         
 
@@ -170,6 +170,7 @@ class  TMDBAPIUtils:
     
 if __name__ == "__main__":
 
+    #api key stored in unposted config file
     tmdb_api_utils = TMDBAPIUtils(api_key=config.api_key)
 
     if True: #Create Genre Table?
@@ -186,18 +187,21 @@ if __name__ == "__main__":
         #write Genre Table to CSV
         language_df.to_csv("languagess.csv")
 
-
     #open kaggle csv of netflix movies
     kaggle_df=pd.read_csv("netflix_titles.csv")
-    
-    BATCH_SIZE=1000 #define batch size
+
+    #define batch size. Defines how many results to gather into list before appending to results dataframe and writing new file
+    BATCH_SIZE=1000 
     STOP_ROW=len(kaggle_df)
 
-    augmented_df=pd.DataFrame() #create a dataframe to hold results
+    #create a dataframe to hold results
+    augmented_df=pd.DataFrame() 
+
+    #initialize indexes
     batch_index=0 
     row_index=0 
 
-    #iterate over kaggle file, writing a copy of the dataframe after adding n files
+    #iterate over kaggle data frame, writing an augmented copy of the dataframe after adding <BATCH SIZE> records
 
     print("run is starting")
     while row_index<STOP_ROW:
@@ -218,5 +222,4 @@ if __name__ == "__main__":
         batch_index+=1
 
     print("End Run")
-    #print(mission)
 
